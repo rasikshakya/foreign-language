@@ -7,7 +7,7 @@ These were used for color and backgrounds:
 4.	bg-gold/15: gold background at 15% opacity – Tailwind’s slash syntax for transparency
 5.	bg-white/5: white at 5% opacity – subtle card backgrounds in dark sections
 6.	border-white/10: white border at 10% opacity – barely-visible dividers on dark backgrounds
-7.	
+
 These were used for layout and spacing:
 8.	max-w-7xl: Sets max-width: 80rem – constrains content width on wide screens
 9.	mx-auto: margin-left: auto; margin-right: auto – centers block elements horizontally
