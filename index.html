@@ -1,256 +1,1021 @@
+
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Ultimate CDN Chess</title>
+<title>LinguaWorld - Foreign Language Learning</title>
 
+<!-- Tailwind CDN -->
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+
+<!-- Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+
+<script>
+tailwind.config = {
+    theme: {
+        extend: {
+        fontFamily: {
+            display: ['"Playfair Display"', 'serif'],
+            body:    ['"DM Sans"', 'sans-serif'],
+            mono:    ['"DM Mono"', 'monospace'],
+        },
+        colors: {
+            ink:    '#0d0d0d',
+            cream:  '#f5f0e8',
+            warm:   '#e8dfc8',
+            gold:   '#c9933a',
+            rust:   '#b84c2e',
+            sage:   '#4a6741',
+            slate:  '#3d4f5c',
+            mist:   '#d4dce3',
+        },
+        animation: {
+            'fade-up':    'fadeUp 0.7s ease forwards',
+            'fade-in':    'fadeIn 0.5s ease forwards',
+            'slide-left': 'slideLeft 0.6s ease forwards',
+            'pulse-soft': 'pulseSoft 3s ease-in-out infinite',
+            'float':      'float 6s ease-in-out infinite',
+        },
+        keyframes: {
+            fadeUp:    { '0%': { opacity:'0', transform:'translateY(30px)' }, '100%': { opacity:'1', transform:'translateY(0)' } },
+            fadeIn:    { '0%': { opacity:'0' },                               '100%': { opacity:'1' } },
+            slideLeft: { '0%': { opacity:'0', transform:'translateX(40px)' }, '100%': { opacity:'1', transform:'translateX(0)' } },
+            pulseSoft: { '0%,100%': { opacity:'0.6' },                       '50%':  { opacity:'1' } },
+            float:     { '0%,100%': { transform:'translateY(0)' },           '50%':  { transform:'translateY(-12px)' } },
+        },
+        }
+    }
+    }
+</script>
+
+<style>
+    /* ---------- Base resets ---------- */
+    *, *::before, *::after { box-sizing: border-box; }
+    html { font-family: 'DM Sans', sans-serif; background: #f5f0e8; color: #0d0d0d; }
+
+    /* ---------- Noise / texture overlay ---------- */
+    body::before {
+    content: '';
+    position: fixed; inset: 0; pointer-events: none; z-index: 9999;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    opacity: 0.35;
+    }
+
+    /* ---------- Scroll-reveal utility ---------- */
+    .reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.75s ease, transform 0.75s ease; }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    /* ---------- Nav link hover underline ---------- */
+    .nav-link { position: relative; }
+    .nav-link::after {
+    content: ''; position: absolute; bottom: -3px; left: 0;
+    width: 0; height: 2px; background: #c9933a;
+    transition: width 0.3s ease;
+    }
+    .nav-link:hover::after { width: 100%; }
+
+    /* ---------- Language card shine effect ---------- */
+    .lang-card { position: relative; overflow: hidden; }
+    .lang-card::after {
+    content: ''; position: absolute; top: -50%; left: -60%;
+    width: 40%; height: 200%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent);
+    transform: skewX(-20deg);
+    transition: left 0.6s ease;
+    }
+    .lang-card:hover::after { left: 120%; }
+
+    /* ---------- Tab active indicator ---------- */
+    .tab-btn.active {
+    background: #c9933a; color: #f5f0e8;
+    }
+
+    /* ---------- Progress bar animated fill ---------- */
+    .prog-bar { transition: width 1.2s cubic-bezier(.4,0,.2,1); }
+
+    /* ---------- Flashcard flip ---------- */
+    .flashcard-scene { perspective: 800px; }
+    .flashcard-inner { transition: transform 0.65s cubic-bezier(.4,0,.2,1); transform-style: preserve-3d; }
+    .flashcard-scene.flipped .flashcard-inner { transform: rotateY(180deg); }
+    .flashcard-front, .flashcard-back { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+    .flashcard-back  { transform: rotateY(180deg); }
+
+    /* ---------- Diagonal section divider ---------- */
+    .diagonal-top    { clip-path: polygon(0 6%, 100% 0, 100% 100%, 0 100%); }
+    .diagonal-bottom { clip-path: polygon(0 0, 100% 0, 100% 94%, 0 100%); }
+
+    /* ---------- Marquee (ticker) ---------- */
+    @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+    .marquee-inner { display: flex; width: max-content; animation: marquee 28s linear infinite; }
+    .marquee-inner:hover { animation-play-state: paused; }
+
+    /* ---------- Floating globe glyphs ---------- */
+    .glyph-float { animation: float 6s ease-in-out infinite; }
+    .glyph-float:nth-child(2n)   { animation-delay: -2s; }
+    .glyph-float:nth-child(3n)   { animation-delay: -4s; }
+
+    /* ---------- Custom scrollbar ---------- */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #f5f0e8; }
+    ::-webkit-scrollbar-thumb { background: #c9933a; border-radius: 3px; }
+
+    /* ---------- Section fade-in delays ---------- */
+    .delay-100 { transition-delay: 100ms; }
+    .delay-200 { transition-delay: 200ms; }
+    .delay-300 { transition-delay: 300ms; }
+    .delay-400 { transition-delay: 400ms; }
+    .delay-500 { transition-delay: 500ms; }
+</style>
 </head>
+<body class="font-body bg-cream text-ink overflow-x-hidden">
 
-<body class="bg-gray-900 text-white min-h-screen flex items-center justify-center p-4">
-<div id="root"></div>
+<!-- ============================================================
+    SECTION 1 · NAVIGATION
+============================================================ -->
+<nav id="navbar" class="fixed top-0 left-0 right-0 z-50 transition-all duration-500 py-5 px-6 md:px-14">
+<div class="max-w-7xl mx-auto flex items-center justify-between">
 
-<script type="text/babel">
-const { useState, useEffect } = React;
+    <!-- Logo -->
+    <a href="#" class="flex items-center gap-2 group">
+    <div class="w-9 h-9 bg-gold rounded-full flex items-center justify-center text-cream font-display font-black text-sm group-hover:scale-110 transition-transform">L</div>
+    <span class="font-display font-bold text-lg tracking-tight">Lingua<span class="text-gold">World</span></span>
+    </a>
 
-function ChessApp() {
+    <!-- Desktop links -->
+    <ul class="hidden md:flex items-center gap-8 text-sm font-medium">
+    <li><a href="#languages" class="nav-link">Languages</a></li>
+    <li><a href="#why" class="nav-link">Why Us</a></li>
+    <li><a href="#flashcard" class="nav-link">Practice</a></li>
+    <li><a href="#quiz" class="nav-link">Quiz</a></li>
+    <li><a href="#tips" class="nav-link">Tips</a></li>
+    </ul>
 
-    const [game, setGame] = useState(new Chess());
-    const [selectedSquare, setSelectedSquare] = useState(null);
-    const [optionSquares, setOptionSquares] = useState([]);
+    <!-- CTA -->
+    <a href="#flashcard" class="hidden md:inline-flex items-center gap-2 bg-ink text-cream text-sm font-medium px-5 py-2.5 rounded-full hover:bg-gold transition-colors duration-300">
+    Start Learning
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+    </a>
 
-    // 1️⃣ Last Move Highlight
-    const [lastMove, setLastMove] = useState(null);
+    <!-- Hamburger (mobile) -->
+    <button id="menu-btn" class="md:hidden w-9 h-9 flex flex-col justify-center items-center gap-1.5" aria-label="menu">
+    <span class="menu-line block w-6 h-0.5 bg-ink transition-all duration-300"></span>
+    <span class="menu-line block w-6 h-0.5 bg-ink transition-all duration-300"></span>
+    <span class="menu-line block w-4 h-0.5 bg-ink transition-all duration-300"></span>
+    </button>
+</div>
 
-    // 2️⃣ Move History
-    const [history, setHistory] = useState([]);
+<!-- Mobile menu -->
+<div id="mobile-menu" class="md:hidden max-h-0 overflow-hidden transition-all duration-500">
+    <ul class="flex flex-col gap-4 px-4 pt-4 pb-6 text-sm font-medium border-t border-warm mt-4">
+    <li><a href="#languages" class="block" onclick="closeMobileMenu()">Languages</a></li>
+    <li><a href="#why" class="block" onclick="closeMobileMenu()">Why Us</a></li>
+    <li><a href="#flashcard" class="block" onclick="closeMobileMenu()">Practice</a></li>
+    <li><a href="#quiz" class="block" onclick="closeMobileMenu()">Quiz</a></li>
+    <li><a href="#tips" class="block" onclick="closeMobileMenu()">Tips</a></li>
+    </ul>
+</div>
+</nav>
 
-    // 4️⃣ Flip Board
-    const [flipped, setFlipped] = useState(false);
 
-    // 6️⃣ Chess Clock (5 minutes each)
-    const [whiteTime, setWhiteTime] = useState(300);
-    const [blackTime, setBlackTime] = useState(300);
+<!-- ============================================================
+    SECTION 2 · HERO
+============================================================ -->
+<section id="hero" class="relative min-h-screen flex items-center overflow-hidden pt-24 pb-20 px-6 md:px-14">
 
-    // 8️⃣ Dark / Light Mode
-    const [darkMode, setDarkMode] = useState(true);
+<!-- Background decorative elements -->
+<div class="absolute inset-0 pointer-events-none overflow-hidden">
+    <div class="absolute top-20 right-10 w-72 h-72 bg-gold/10 rounded-full blur-3xl"></div>
+    <div class="absolute bottom-10 left-0 w-96 h-96 bg-rust/8 rounded-full blur-3xl"></div>
+    <!-- Floating glyphs -->
+    <div class="absolute top-28 left-[8%] glyph-float text-5xl md:text-7xl font-display opacity-10 select-none">漢</div>
+    <div class="absolute top-40 right-[12%] glyph-float text-4xl md:text-6xl font-display opacity-10 select-none" style="animation-delay:-1.5s">Á</div>
+    <div class="absolute bottom-32 left-[20%] glyph-float text-3xl md:text-5xl font-display opacity-10 select-none" style="animation-delay:-3s">ب</div>
+    <div class="absolute bottom-24 right-[20%] glyph-float text-5xl md:text-8xl font-display opacity-8 select-none" style="animation-delay:-4.2s">あ</div>
+    <div class="absolute top-1/2 left-[5%] glyph-float text-2xl font-display opacity-10 select-none" style="animation-delay:-2s">Ü</div>
+</div>
 
-    const pieceSymbols = {
-        'p':'♟','r':'♜','n':'♞','b':'♝','q':'♛','k':'♚',
-        'P':'♙','R':'♖','N':'♘','B':'♗','Q':'♕','K':'♔'
-    };
+<div class="max-w-7xl mx-auto w-full grid md:grid-cols-2 gap-12 items-center relative z-10">
 
-    const board = flipped ? [...game.board()].reverse() : game.board();
+    <!-- Left: Text -->
+    <div>
+    <div class="inline-flex items-center gap-2 bg-gold/15 border border-gold/30 text-gold text-xs font-mono uppercase tracking-widest px-4 py-2 rounded-full mb-8 animate-fade-in">
+        🌍 &nbsp; 7,000+ Languages in the World
+    </div>
 
-    function getSquareLabel(i,j){
-        const row = flipped ? i : i;
-        return String.fromCharCode(97 + j) + (8 - i);
-    }
+    <h1 class="font-display text-5xl md:text-7xl leading-none font-black mb-6 animate-fade-up" style="animation-delay:0.1s">
+        Speak the<br/>
+        <span class="text-gold italic">World's</span><br/>
+        Languages
+    </h1>
 
-    // 6️⃣ Timer Logic
-    useEffect(()=>{
-        const timer = setInterval(()=>{
-            if(!game.game_over()){
-                if(game.turn()==='w') setWhiteTime(t=>t>0?t-1:0);
-                else setBlackTime(t=>t>0?t-1:0);
-            }
-        },1000);
-        return ()=>clearInterval(timer);
-    },[game]);
+    <p class="text-slate text-lg md:text-xl leading-relaxed max-w-md mb-10 animate-fade-up" style="animation-delay:0.25s">
+        Unlock cultures, forge connections, and expand your mind. Every language you learn is a new window into humanity.
+    </p>
 
-    function handleSquareClick(square){
+    <div class="flex flex-wrap gap-4 animate-fade-up" style="animation-delay:0.4s">
+        <a href="#languages" class="inline-flex items-center gap-2 bg-gold text-cream font-semibold px-7 py-3.5 rounded-full hover:bg-rust transition-colors duration-300 shadow-lg shadow-gold/25">
+        Explore Languages
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+        </a>
+        <a href="#flashcard" class="inline-flex items-center gap-2 border-2 border-ink text-ink font-semibold px-7 py-3.5 rounded-full hover:bg-ink hover:text-cream transition-all duration-300">
+        Try a Flashcard
+        </a>
+    </div>
 
-        if(selectedSquare){
-            const move = game.move({
-                from:selectedSquare,
-                to:square,
-                promotion:'q'
-            });
-
-            if(move){
-
-                // 1️⃣ Save Last Move
-                setLastMove({from:move.from,to:move.to});
-
-                // 2️⃣ Update History
-                setHistory(game.history());
-
-                // 3️⃣ Play Sound
-                const audio = new Audio(move.captured 
-                    ? "https://assets.mixkit.co/sfx/preview/mixkit-arcade-retro-changing-tab-206.wav"
-                    : "https://assets.mixkit.co/sfx/preview/mixkit-game-click-1114.wav");
-                audio.play();
-
-                setGame(new Chess(game.fen()));
-                setSelectedSquare(null);
-                setOptionSquares([]);
-
-                // 9️⃣ Simple Random AI (Black plays)
-                if(game.turn()==='b' && !game.game_over()){
-                    setTimeout(()=>{
-                        const moves = game.moves();
-                        const randomMove = moves[Math.floor(Math.random()*moves.length)];
-                        game.move(randomMove);
-                        setLastMove({from:randomMove.substring(0,2),to:randomMove.substring(2,4)});
-                        setHistory(game.history());
-                        setGame(new Chess(game.fen()));
-                    },400);
-                }
-
-                return;
-            }
-        }
-
-        const piece = game.get(square);
-        if(piece && piece.color===game.turn()){
-            setSelectedSquare(square);
-            const moves = game.moves({square,verbose:true});
-            setOptionSquares(moves.map(m=>m.to));
-        }else{
-            setSelectedSquare(null);
-            setOptionSquares([]);
-        }
-    }
-
-    // 7️⃣ Undo Move
-    function undoMove(){
-        game.undo();
-        game.undo(); // undo AI move too
-        setGame(new Chess(game.fen()));
-        setHistory(game.history());
-    }
-
-    function resetGame(){
-        const newGame = new Chess();
-        setGame(newGame);
-        setHistory([]);
-        setLastMove(null);
-        setWhiteTime(300);
-        setBlackTime(300);
-    }
-
-    function formatTime(seconds){
-        const m=Math.floor(seconds/60);
-        const s=seconds%60;
-        return `${m}:${s<10?'0':''}${s}`;
-    }
-
-    function status(){
-        if(game.in_checkmate()) return "Checkmate!";
-        if(game.in_draw()) return "Draw!";
-        return `${game.turn()==='w'?"White":"Black"} Turn`;
-    }
-
-    return(
-    <div className="flex flex-col items-center gap-6">
-
-        <h1 className="text-3xl font-bold text-yellow-400">Ultimate React Chess</h1>
-
-        {/* 6️⃣ Clock Display */}
-        <div className="flex gap-8 text-lg font-mono">
-            <div>White: {formatTime(whiteTime)}</div>
-            <div>Black: {formatTime(blackTime)}</div>
+    <!-- Stats row -->
+    <div class="flex gap-8 mt-14 animate-fade-up" style="animation-delay:0.55s">
+        <div>
+        <div class="font-display text-3xl font-black text-gold">40+</div>
+        <div class="text-slate text-xs mt-1">Languages</div>
         </div>
-
-        <p className={`text-lg ${game.in_check()?'text-red-500 animate-pulse':'text-gray-300'}`}>
-            {status()}
-        </p>
-
-        <div className="grid grid-cols-8 border-4 border-gray-700 shadow-2xl">
-        {board.map((row,i)=>
-            row.map((square,j)=>{
-
-                const squareLabel = getSquareLabel(i,j);
-                const isDark = (i+j)%2===1;
-                const isSelected = selectedSquare===squareLabel;
-                const isOption = optionSquares.includes(squareLabel);
-
-                // 1️⃣ Highlight Last Move
-                const isLastMove = lastMove &&
-                    (squareLabel===lastMove.from || squareLabel===lastMove.to);
-
-                return(
-                <div key={squareLabel}
-                    onClick={()=>handleSquareClick(squareLabel)}
-                    className={`w-14 h-14 md:w-16 md:h-16 flex items-center justify-center text-4xl cursor-pointer relative
-                        ${isDark
-                            ? darkMode?'bg-slate-700':'bg-green-700'
-                            : darkMode?'bg-slate-400':'bg-green-200'}
-                        ${isSelected?'bg-yellow-300/60':''}
-                        ${isLastMove?'bg-green-400/60':''}
-                    `}
-                >
-                    {/* Legal Move Indicator */}
-                    {isOption && (
-                        <div className="absolute w-4 h-4 bg-black/30 rounded-full"></div>
-                    )}
-
-                    {/* 5️⃣ King Highlight in Check */}
-                    <span className={`z-10 select-none
-                        ${square?.color==='w'?'text-white':'text-black'}
-                        ${game.in_check() && square?.type==='k' && square?.color===game.turn()
-                            ?'animate-pulse text-red-600':''
-                        }
-                    `}>
-                        {square ? pieceSymbols[square.color==='w'?square.type.toUpperCase():square.type] : ''}
-                    </span>
-                </div>
-                );
-            })
-        )}
+        <div class="w-px bg-warm"></div>
+        <div>
+        <div class="font-display text-3xl font-black text-rust">2M+</div>
+        <div class="text-slate text-xs mt-1">Learners</div>
         </div>
-
-        {/* Control Buttons */}
-        <div className="flex gap-4 flex-wrap justify-center">
-            <button onClick={resetGame} className="bg-red-600 px-4 py-2 rounded">
-                New Game
-            </button>
-
-            {/* 7️⃣ Undo */}
-            <button onClick={undoMove} className="bg-blue-600 px-4 py-2 rounded">
-                Undo
-            </button>
-
-            {/* 4️⃣ Flip Board */}
-            <button onClick={()=>setFlipped(!flipped)} className="bg-purple-600 px-4 py-2 rounded">
-                Flip Board
-            </button>
-
-            {/* 8️⃣ Theme Toggle */}
-            <button onClick={()=>setDarkMode(!darkMode)} className="bg-yellow-500 px-4 py-2 rounded text-black">
-                Toggle Theme
-            </button>
+        <div class="w-px bg-warm"></div>
+        <div>
+        <div class="font-display text-3xl font-black text-sage">98%</div>
+        <div class="text-slate text-xs mt-1">Satisfaction</div>
         </div>
+    </div>
 
-        {/* 2️⃣ Move History Panel */}
-        <div className="bg-gray-800 p-4 rounded w-72 max-h-48 overflow-auto text-sm">
-            {history.map((move,i)=>(
-                <div key={i}>{i+1}. {move}</div>
-            ))}
+    <!-- Right: Feature card stack -->
+    <div class="relative flex justify-center items-center h-80 md:h-[480px] animate-slide-left">
+    <!-- Card 3 (back) -->
+    <div class="absolute rotate-6 w-64 h-80 bg-mist rounded-2xl shadow-lg"></div>
+    <!-- Card 2 (mid) -->
+    <div class="absolute rotate-2 w-64 h-80 bg-warm rounded-2xl shadow-lg"></div>
+    <!-- Card 1 (front) -->
+    <div class="relative w-64 h-80 bg-ink rounded-2xl shadow-2xl flex flex-col justify-between p-6 text-cream">
+        <div class="flex justify-between items-start">
+        <div class="font-display text-4xl font-black text-gold">Hola</div>
+        <div class="text-xs bg-gold/20 text-gold px-2 py-1 rounded-full">🇪🇸 Spanish</div>
         </div>
+        <div class="space-y-2">
+        <div class="text-2xl font-display italic opacity-40">"Hello"</div>
+        <div class="text-xs text-mist/60 font-mono">/ ˈo.la /</div>
+        </div>
+        <div class="space-y-2">
+        <div class="text-xs text-mist/50 font-mono uppercase tracking-wider">Daily Lesson Progress</div>
+        <div class="w-full bg-white/10 rounded-full h-1.5">
+            <div class="bg-gold h-1.5 rounded-full w-3/4 prog-bar" style="width:75%"></div>
+        </div>
+        <div class="flex justify-between text-xs text-mist/40">
+            <span>75% complete</span><span>15 min</span>
+        </div>
+        </div>
+        <div class="flex gap-2">
+        <div class="flex-1 bg-white/10 rounded-xl p-3 text-center">
+            <div class="font-display text-xl font-bold">12</div>
+            <div class="text-xs text-mist/50 mt-0.5">Streak 🔥</div>
+        </div>
+        <div class="flex-1 bg-gold/20 rounded-xl p-3 text-center">
+            <div class="font-display text-xl font-bold text-gold">A1</div>
+            <div class="text-xs text-mist/50 mt-0.5">Level</div>
+        </div>
+        </div>
+    </div>
+    </div>
+</div>
+</section>
 
-        {/* 🔟 Game Over Modal */}
-        {game.game_over() && (
-            <div className="fixed inset-0 bg-black/70 flex items-center justify-center">
-                <div className="bg-white text-black p-6 rounded-lg text-center">
-                    <h2 className="text-xl font-bold mb-4">Game Over</h2>
-                    <button onClick={resetGame} className="bg-green-600 text-white px-4 py-2 rounded">
-                        Play Again
-                    </button>
-                </div>
-            </div>
-        )}
+<!-- ============================================================
+    SECTION 3 · LANGUAGE TICKER / MARQUEE
+============================================================ -->
+<div class="bg-ink py-4 overflow-hidden">
+<div class="marquee-inner text-cream/40 font-mono text-sm gap-12" style="gap:3rem">
+    <!-- Repeated twice for seamless loop -->
+    <span class="mx-8">🇫🇷 French</span><span class="mx-8 text-gold">•</span>
+    <span class="mx-8">🇩🇪 German</span><span class="mx-8 text-gold">•</span>
+    <span class="mx-8">🇯🇵 Japanese</span><span class="mx-8 text-gold">•</span>
+    <span class="mx-8">🇨🇳 Mandarin</span><span class="mx-8 text-gold">•</span>
+    <span class="mx-8">🇪🇸 Spanish</span><span class="mx-8 text-gold">•</span>
+    <span class="mx-8">🇮🇹 Italian</span><span class="mx-8 text-gold">•</span>
+    <span class="mx-8">🇷🇺 Russian</span><span class="mx-8 text-gold">•</span>
+    <span class="mx-8">🇧🇷 Portuguese</span><span class="mx-8 text-gold">•</span>
+    <span class="mx-8">🇸🇦 Arabic</span><span class="mx-8 text-gold">•</span>
+    <span class="mx-8">🇰🇷 Korean</span><span class="mx-8 text-gold">•</span>
+    <!-- duplicate -->
+    <span class="mx-8">🇫🇷 French</span><span class="mx-8 text-gold">•</span>
+    <span class="mx-8">🇩🇪 German</span><span class="mx-8 text-gold">•</span>
+    <span class="mx-8">🇯🇵 Japanese</span><span class="mx-8 text-gold">•</span>
+    <span class="mx-8">🇨🇳 Mandarin</span><span class="mx-8 text-gold">•</span>
+    <span class="mx-8">🇪🇸 Spanish</span><span class="mx-8 text-gold">•</span>
+    <span class="mx-8">🇮🇹 Italian</span><span class="mx-8 text-gold">•</span>
+    <span class="mx-8">🇷🇺 Russian</span><span class="mx-8 text-gold">•</span>
+    <span class="mx-8">🇧🇷 Portuguese</span><span class="mx-8 text-gold">•</span>
+    <span class="mx-8">🇸🇦 Arabic</span><span class="mx-8 text-gold">•</span>
+    <span class="mx-8">🇰🇷 Korean</span><span class="mx-8 text-gold">•</span>
+</div>
+</div>
+
+
+<!-- ============================================================
+    SECTION 4 · FEATURED LANGUAGES
+============================================================ -->
+<section id="languages" class="py-28 px-6 md:px-14">
+<div class="max-w-7xl mx-auto">
+
+    <!-- Section header -->
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-16 reveal">
+    <div>
+        <div class="text-xs font-mono uppercase tracking-widest text-gold mb-3">Featured Languages</div>
+        <h2 class="font-display text-4xl md:text-5xl font-black leading-tight">
+        Choose Your<br/><span class="italic text-rust">Journey</span>
+        </h2>
+    </div>
+    <p class="text-slate max-w-sm text-sm leading-relaxed">
+        From the romance of French to the precision of Japanese — find the language that speaks to your soul.
+    </p>
+    </div>
+
+    <!-- Tab filter -->
+    <div id="lang-tabs" class="flex flex-wrap gap-2 mb-10 reveal delay-100">
+    <button class="tab-btn active text-xs font-medium px-4 py-2 rounded-full border border-ink/20 transition-all" data-filter="all">All</button>
+    <button class="tab-btn text-xs font-medium px-4 py-2 rounded-full border border-ink/20 transition-all hover:border-gold" data-filter="romance">Romance</button>
+    <button class="tab-btn text-xs font-medium px-4 py-2 rounded-full border border-ink/20 transition-all hover:border-gold" data-filter="asian">Asian</button>
+    <button class="tab-btn text-xs font-medium px-4 py-2 rounded-full border border-ink/20 transition-all hover:border-gold" data-filter="germanic">Germanic</button>
+    <button class="tab-btn text-xs font-medium px-4 py-2 rounded-full border border-ink/20 transition-all hover:border-gold" data-filter="other">Other</button>
+    </div>
+
+    <!-- Language cards grid -->
+    <div id="lang-grid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    <!-- Cards injected by JS -->
+    </div>
+</div>
+</section>
+
+
+<!-- ============================================================
+    SECTION 5 · WHY LEARN A LANGUAGE
+============================================================ -->
+<section id="why" class="diagonal-top diagonal-bottom bg-ink py-36 px-6 md:px-14 -mt-6 text-cream">
+<div class="max-w-7xl mx-auto">
+
+    <div class="text-center mb-20 reveal">
+    <div class="text-xs font-mono uppercase tracking-widest text-gold mb-4">Why Learn?</div>
+    <h2 class="font-display text-4xl md:text-6xl font-black leading-tight">
+        One language opens<br/><span class="italic text-gold">one corridor.</span>
+    </h2>
+    <p class="text-mist/60 mt-6 max-w-xl mx-auto text-sm leading-relaxed">
+        Every new language you learn rewires your brain, connects you to millions, and opens doors that were invisible before.
+    </p>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-6">
+
+    <!-- Benefit 1 -->
+    <div class="bg-white/5 border border-white/10 rounded-2xl p-8 hover:bg-white/8 hover:border-gold/30 transition-all duration-500 reveal delay-100">
+        <div class="text-3xl mb-5">🧠</div>
+        <h3 class="font-display text-xl font-bold mb-3">Boosts Brain Power</h3>
+        <p class="text-mist/50 text-sm leading-relaxed">Bilingualism delays Alzheimer's by up to 5 years, enhances multitasking ability, and sharpens overall cognitive function.</p>
+        <div class="mt-6 flex items-center gap-2 text-gold text-xs font-mono">
+        <div class="w-2 h-2 bg-gold rounded-full animate-pulse"></div>
+        Neurologically proven
+        </div>
+    </div>
+
+    <!-- Benefit 2 -->
+    <div class="bg-white/5 border border-white/10 rounded-2xl p-8 hover:bg-white/8 hover:border-gold/30 transition-all duration-500 reveal delay-200">
+        <div class="text-3xl mb-5">💼</div>
+        <h3 class="font-display text-xl font-bold mb-3">Career Advantage</h3>
+        <p class="text-mist/50 text-sm leading-relaxed">Bilingual professionals earn 5–20% more than monolingual counterparts and access a dramatically wider global job market.</p>
+        <div class="mt-6 flex items-center gap-2 text-gold text-xs font-mono">
+        <div class="w-2 h-2 bg-gold rounded-full animate-pulse"></div>
+        Higher earning potential
+        </div>
+    </div>
+
+    <!-- Benefit 3 -->
+    <div class="bg-white/5 border border-white/10 rounded-2xl p-8 hover:bg-white/8 hover:border-gold/30 transition-all duration-500 reveal delay-300">
+        <div class="text-3xl mb-5">🌏</div>
+        <h3 class="font-display text-xl font-bold mb-3">Cultural Empathy</h3>
+        <p class="text-mist/50 text-sm leading-relaxed">Language is culture encoded. Speaking someone's native tongue is the deepest form of respect — and the fastest path to genuine connection.</p>
+        <div class="mt-6 flex items-center gap-2 text-gold text-xs font-mono">
+        <div class="w-2 h-2 bg-gold rounded-full animate-pulse"></div>
+        Build real connections
+        </div>
+    </div>
+
+    <!-- Benefit 4 -->
+    <div class="bg-white/5 border border-white/10 rounded-2xl p-8 hover:bg-white/8 hover:border-gold/30 transition-all duration-500 reveal delay-200">
+        <div class="text-3xl mb-5">✈️</div>
+        <h3 class="font-display text-xl font-bold mb-3">Travel Transformed</h3>
+        <p class="text-mist/50 text-sm leading-relaxed">Navigate like a local, discover hidden gems, and experience a country as it truly is — not filtered through a tourist lens.</p>
+        <div class="mt-6 flex items-center gap-2 text-gold text-xs font-mono">
+        <div class="w-2 h-2 bg-gold rounded-full animate-pulse"></div>
+        Authentic experiences
+        </div>
+    </div>
+
+    <!-- Benefit 5 -->
+    <div class="bg-white/5 border border-white/10 rounded-2xl p-8 hover:bg-white/8 hover:border-gold/30 transition-all duration-500 reveal delay-300">
+        <div class="text-3xl mb-5">📚</div>
+        <h3 class="font-display text-xl font-bold mb-3">Literature & Art</h3>
+        <p class="text-mist/50 text-sm leading-relaxed">Read Dostoevsky in Russian, Cervantes in Spanish, and Murakami in Japanese — in the original, as the author intended.</p>
+        <div class="mt-6 flex items-center gap-2 text-gold text-xs font-mono">
+        <div class="w-2 h-2 bg-gold rounded-full animate-pulse"></div>
+        Unfiltered expression
+        </div>
+    </div>
+
+    <!-- Benefit 6 -->
+    <div class="bg-white/5 border border-white/10 rounded-2xl p-8 hover:bg-white/8 hover:border-gold/30 transition-all duration-500 reveal delay-400">
+        <div class="text-3xl mb-5">🤝</div>
+        <h3 class="font-display text-xl font-bold mb-3">Confidence Builder</h3>
+        <p class="text-mist/50 text-sm leading-relaxed">Learning a language is one of the few challenges that guarantees — with time — absolute success. Every small win reinforces your belief in yourself.</p>
+        <div class="mt-6 flex items-center gap-2 text-gold text-xs font-mono">
+        <div class="w-2 h-2 bg-gold rounded-full animate-pulse"></div>
+        Growth mindset
+        </div>
+    </div>
 
     </div>
-    );
+</div>
+</section>
+
+
+<!-- ============================================================
+    SECTION 6 · FLASHCARD PRACTICE
+============================================================ -->
+<section id="flashcard" class="py-28 px-6 md:px-14">
+<div class="max-w-7xl mx-auto">
+
+    <div class="text-center mb-16 reveal">
+    <div class="text-xs font-mono uppercase tracking-widest text-gold mb-3">Interactive Practice</div>
+    <h2 class="font-display text-4xl md:text-5xl font-black">
+        Flip a <span class="italic text-rust">Flashcard</span>
+    </h2>
+    <p class="text-slate mt-4 text-sm max-w-md mx-auto">Test yourself with real vocabulary. Click to flip, then use the arrows to navigate.</p>
+    </div>
+
+    <!-- Language picker -->
+    <div class="flex flex-wrap justify-center gap-3 mb-12 reveal delay-100" id="fc-lang-picker">
+    <button class="fc-lang-btn active text-xs font-medium px-4 py-2 rounded-full bg-gold text-cream transition-all" data-lang="spanish">🇪🇸 Spanish</button>
+    <button class="fc-lang-btn text-xs font-medium px-4 py-2 rounded-full border border-ink/20 hover:border-gold transition-all" data-lang="french">🇫🇷 French</button>
+    <button class="fc-lang-btn text-xs font-medium px-4 py-2 rounded-full border border-ink/20 hover:border-gold transition-all" data-lang="japanese">🇯🇵 Japanese</button>
+    <button class="fc-lang-btn text-xs font-medium px-4 py-2 rounded-full border border-ink/20 hover:border-gold transition-all" data-lang="german">🇩🇪 German</button>
+    </div>
+
+    <!-- Flashcard -->
+    <div class="flex flex-col items-center gap-8 reveal delay-200">
+    <div class="flashcard-scene w-80 h-52 cursor-pointer select-none" id="fc-scene" onclick="flipCard()">
+        <div class="flashcard-inner relative w-full h-full">
+        <!-- Front -->
+        <div class="flashcard-front absolute inset-0 bg-ink text-cream rounded-2xl shadow-2xl flex flex-col justify-between p-7">
+            <div class="flex justify-between items-center">
+            <span id="fc-lang-label" class="text-xs font-mono text-gold uppercase tracking-wider">Spanish</span>
+            <span class="text-xs text-mist/40">Click to flip</span>
+            </div>
+            <div class="text-center">
+            <div id="fc-word" class="font-display text-5xl font-black">Hola</div>
+            <div id="fc-phonetic" class="text-mist/40 font-mono text-sm mt-2">/ ˈo.la /</div>
+            </div>
+            <div class="flex items-center gap-2 text-mist/30 text-xs">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+            <span id="fc-counter">1 / 6</span>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </div>
+        </div>
+        <!-- Back -->
+        <div class="flashcard-back absolute inset-0 bg-gold text-cream rounded-2xl shadow-2xl flex flex-col justify-between p-7">
+            <div class="text-xs font-mono text-cream/60 uppercase tracking-wider">English</div>
+            <div class="text-center">
+            <div id="fc-translation" class="font-display text-5xl font-black">Hello</div>
+            <div id="fc-example" class="text-cream/60 text-sm mt-3 italic">"¡Hola! ¿Cómo estás?"</div>
+            </div>
+            <div class="text-cream/40 text-xs text-center">Tap again to go back</div>
+        </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="flex items-center gap-4">
+        <button onclick="prevCard()" class="w-11 h-11 rounded-full bg-ink text-cream flex items-center justify-center hover:bg-gold transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        </button>
+        <div id="fc-dots" class="flex gap-2"></div>
+        <button onclick="nextCard()" class="w-11 h-11 rounded-full bg-ink text-cream flex items-center justify-center hover:bg-gold transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </button>
+    </div>
+
+    <!-- Mastered toggle -->
+    <button id="master-btn" onclick="toggleMastered()" class="text-xs font-medium px-5 py-2 rounded-full border-2 border-sage text-sage hover:bg-sage hover:text-cream transition-all">
+        ✓ Mark as Mastered
+    </button>
+    </div>
+</div>
+</section>
+
+
+<!-- ============================================================
+    SECTION 7 · QUICK QUIZ
+============================================================ -->
+<section id="quiz" class="py-28 px-6 md:px-14 bg-warm">
+<div class="max-w-4xl mx-auto">
+
+    <div class="text-center mb-16 reveal">
+    <div class="text-xs font-mono uppercase tracking-widest text-gold mb-3">Test Yourself</div>
+    <h2 class="font-display text-4xl md:text-5xl font-black">Quick <span class="italic text-rust">Quiz</span></h2>
+    <p class="text-slate mt-4 text-sm">5 multiple-choice questions. Can you score 5/5?</p>
+    </div>
+
+    <div id="quiz-container" class="reveal delay-100">
+    <!-- Rendered by JS -->
+    </div>
+</div>
+</section>
+
+
+<!-- ============================================================
+    SECTION 8 · LEARNING TIPS
+============================================================ -->
+<section id="tips" class="py-28 px-6 md:px-14">
+<div class="max-w-7xl mx-auto">
+
+    <div class="mb-16 reveal">
+    <div class="text-xs font-mono uppercase tracking-widest text-gold mb-3">Expert Advice</div>
+    <h2 class="font-display text-4xl md:text-5xl font-black leading-tight">
+        The Science of<br/><span class="italic text-rust">Faster Learning</span>
+    </h2>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-8">
+
+    <div class="reveal delay-100 flex gap-5 p-7 bg-warm rounded-2xl border border-warm hover:border-gold/40 transition-all">
+        <div class="text-3xl shrink-0">📅</div>
+        <div>
+        <h3 class="font-display text-lg font-bold mb-2">Spaced Repetition</h3>
+        <p class="text-slate text-sm leading-relaxed">Review words at increasing intervals — 1 day, 3 days, 1 week, 1 month. This method exploits how memory consolidates during sleep, making recall effortless long-term.</p>
+        </div>
+    </div>
+
+    <div class="reveal delay-200 flex gap-5 p-7 bg-warm rounded-2xl border border-warm hover:border-gold/40 transition-all">
+        <div class="text-3xl shrink-0">🗣️</div>
+        <div>
+        <h3 class="font-display text-lg font-bold mb-2">Output From Day One</h3>
+        <p class="text-slate text-sm leading-relaxed">Don't wait until you feel "ready" to speak. The uncomfortable act of production — speaking, writing — is where real acquisition happens. Mistakes are the curriculum.</p>
+        </div>
+    </div>
+
+    <div class="reveal delay-100 flex gap-5 p-7 bg-warm rounded-2xl border border-warm hover:border-gold/40 transition-all">
+        <div class="text-3xl shrink-0">🎯</div>
+        <div>
+        <h3 class="font-display text-lg font-bold mb-2">Focus on High-Frequency Words</h3>
+        <p class="text-slate text-sm leading-relaxed">The top 1,000 words in any language cover ~85% of daily conversation. Master those before expanding. In Spanish, "ser", "estar", "tener" and "hacer" alone unlock hundreds of phrases.</p>
+        </div>
+    </div>
+
+    <div class="reveal delay-200 flex gap-5 p-7 bg-warm rounded-2xl border border-warm hover:border-gold/40 transition-all">
+        <div class="text-3xl shrink-0">📺</div>
+        <div>
+        <h3 class="font-display text-lg font-bold mb-2">Immersive Input</h3>
+        <p class="text-slate text-sm leading-relaxed">Change your phone language, watch shows with subtitles, listen to podcasts. Your brain acquires language best when it's wrapped in context, emotion, and repetition.</p>
+        </div>
+    </div>
+
+    <div class="reveal delay-100 flex gap-5 p-7 bg-warm rounded-2xl border border-warm hover:border-gold/40 transition-all">
+        <div class="text-3xl shrink-0">🤝</div>
+        <div>
+        <h3 class="font-display text-lg font-bold mb-2">Find a Language Partner</h3>
+        <p class="text-slate text-sm leading-relaxed">Social accountability and real conversation accelerate progress dramatically. Apps like Tandem and HelloTalk connect you with native speakers who want to learn your language.</p>
+        </div>
+    </div>
+
+    <div class="reveal delay-200 flex gap-5 p-7 bg-warm rounded-2xl border border-warm hover:border-gold/40 transition-all">
+        <div class="text-3xl shrink-0">🏆</div>
+        <div>
+        <h3 class="font-display text-lg font-bold mb-2">Consistency Over Intensity</h3>
+        <p class="text-slate text-sm leading-relaxed">15 minutes every single day beats 3 hours on the weekend. Daily exposure trains your brain to "stay in language mode" and builds habits that last for life.</p>
+        </div>
+    </div>
+
+    </div>
+</div>
+</section>
+
+
+<!-- ============================================================
+    SECTION 9 · PROGRESS TRACKER (visual)
+============================================================ -->
+<section class="py-28 px-6 md:px-14 bg-ink text-cream">
+<div class="max-w-5xl mx-auto">
+
+    <div class="text-center mb-16 reveal">
+    <div class="text-xs font-mono uppercase tracking-widest text-gold mb-3">Global Stats</div>
+    <h2 class="font-display text-4xl md:text-5xl font-black">Most Studied<br/><span class="italic text-gold">Languages</span></h2>
+    </div>
+
+    <div class="space-y-5 reveal delay-100" id="progress-bars">
+    <!-- Injected by JS -->
+    </div>
+</div>
+</section>
+
+
+<!-- ============================================================
+    SECTION 10 · FOOTER
+============================================================ -->
+<footer class="bg-ink text-cream border-t border-white/10 pt-16 pb-10 px-6 md:px-14">
+<div class="max-w-7xl mx-auto">
+
+    <div class="grid md:grid-cols-4 gap-10 mb-14">
+
+    <div class="md:col-span-2">
+        <div class="flex items-center gap-2 mb-4">
+        <div class="w-8 h-8 bg-gold rounded-full flex items-center justify-center text-cream font-display font-black text-sm">L</div>
+        <span class="font-display font-bold text-lg">Lingua<span class="text-gold">World</span></span>
+        </div>
+        <p class="text-mist/50 text-sm leading-relaxed max-w-xs">
+        Empowering learners worldwide to break language barriers and discover the world through words.
+        </p>
+        <div class="flex gap-3 mt-6">
+        <a href="#" class="w-9 h-9 bg-white/5 rounded-full flex items-center justify-center hover:bg-gold transition-colors text-sm">𝕏</a>
+        <a href="#" class="w-9 h-9 bg-white/5 rounded-full flex items-center justify-center hover:bg-gold transition-colors text-sm">f</a>
+        <a href="#" class="w-9 h-9 bg-white/5 rounded-full flex items-center justify-center hover:bg-gold transition-colors text-sm">in</a>
+        </div>
+    </div>
+
+    <div>
+        <h4 class="font-display font-bold text-sm mb-4 text-gold">Explore</h4>
+        <ul class="space-y-2 text-sm text-mist/50">
+        <li><a href="#languages" class="hover:text-cream transition-colors">Languages</a></li>
+        <li><a href="#flashcard" class="hover:text-cream transition-colors">Flashcards</a></li>
+        <li><a href="#quiz" class="hover:text-cream transition-colors">Quiz</a></li>
+        <li><a href="#tips" class="hover:text-cream transition-colors">Learning Tips</a></li>
+        </ul>
+    </div>
+
+    <div>
+        <h4 class="font-display font-bold text-sm mb-4 text-gold">About</h4>
+        <ul class="space-y-2 text-sm text-mist/50">
+        <li><a href="#why" class="hover:text-cream transition-colors">Why Learn?</a></li>
+        <li><a href="#" class="hover:text-cream transition-colors">Our Method</a></li>
+        <li><a href="#" class="hover:text-cream transition-colors">Community</a></li>
+        <li><a href="#" class="hover:text-cream transition-colors">Contact</a></li>
+        </ul>
+    </div>
+    </div>
+
+    <div class="border-t border-white/10 pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-mist/30 text-xs font-mono">
+    <span>© 2025 LinguaWorld. Designed for language lovers.</span>
+    <span>"A different language is a different vision of life." — Federico Fellini</span>
+    </div>
+</div>
+</footer>
+
+
+<!-- ============================================================
+    JAVASCRIPT
+============================================================ -->
+<script>
+/* ──────────────────────────────────────────────────────────────
+DATA
+────────────────────────────────────────────────────────────── */
+const languages = [
+{ name:'Spanish',    flag:'🇪🇸', family:'romance', speakers:'500M+', difficulty:'Easy',    color:'bg-amber-50',    accent:'border-amber-400',   desc:'The world\'s 2nd most spoken language; the gateway to Latin America and Iberian culture.',    words:['Hola','Amor','Gracias'] },
+{ name:'French',     flag:'🇫🇷', family:'romance', speakers:'300M+', difficulty:'Easy',    color:'bg-blue-50',     accent:'border-blue-400',    desc:'The language of diplomacy, cuisine, and romance. Official in 29 countries across 5 continents.',  words:['Bonjour','Amour','Merci'] },
+{ name:'Italian',    flag:'🇮🇹', family:'romance', speakers:'85M+',  difficulty:'Easy',    color:'bg-green-50',    accent:'border-green-500',   desc:'Born from Latin and music — the language of the Renaissance, opera, and the finest cuisine.',    words:['Ciao','Amore','Grazie'] },
+{ name:'Portuguese', flag:'🇧🇷', family:'romance', speakers:'260M+', difficulty:'Easy',    color:'bg-rose-50',     accent:'border-rose-400',    desc:'From Lisbon\'s fado to Rio\'s carnival — a language of poetry, longing, and passion.',          words:['Olá','Amor','Obrigado'] },
+{ name:'Japanese',   flag:'🇯🇵', family:'asian',   speakers:'128M+', difficulty:'Hard',   color:'bg-red-50',      accent:'border-red-400',     desc:'Three scripts, profound politeness, and a culture unlike any other. Challenging and rewarding.', words:['こんにちは','愛','ありがとう'] },
+{ name:'Mandarin',   flag:'🇨🇳', family:'asian',   speakers:'920M+', difficulty:'Hard',   color:'bg-yellow-50',   accent:'border-yellow-500',  desc:'The most spoken language on Earth. Tonal, logographic, and utterly fascinating.',               words:['你好','爱','谢谢'] },
+{ name:'Korean',     flag:'🇰🇷', family:'asian',   speakers:'77M+',  difficulty:'Medium', color:'bg-indigo-50',   accent:'border-indigo-400',  desc:'A unique language isolate with a beautifully logical alphabet — Hangul — designed in 1443.',    words:['안녕','사랑','감사해'] },
+{ name:'German',     flag:'🇩🇪', family:'germanic',speakers:'130M+', difficulty:'Medium', color:'bg-orange-50',   accent:'border-orange-400',  desc:'The language of Goethe, Einstein, and engineering precision. Logical and expressive.',           words:['Hallo','Liebe','Danke'] },
+{ name:'Arabic',     flag:'🇸🇦', family:'other',   speakers:'420M+', difficulty:'Hard',   color:'bg-teal-50',     accent:'border-teal-500',    desc:'Written right-to-left with gorgeous calligraphy — the language of the Quran and a billion hearts.', words:['مرحبا','حب','شكرا'] },
+];
+
+const flashcards = {
+spanish: [
+    { word:'Hola',     phonetic:'/ ˈo.la /',     translation:'Hello',      example:'"¡Hola! ¿Cómo estás?"' },
+    { word:'Gracias',  phonetic:'/ ˈɡɾa.θjas /', translation:'Thank you',  example:'"¡Muchas gracias!"' },
+    { word:'Por favor',phonetic:'/ poɾ faˈβoɾ /',translation:'Please',     example:'"Un café, por favor."' },
+    { word:'Buenas',   phonetic:'/ ˈbwe.nas /',  translation:'Good morning/evening', example:'"¡Buenas noches!"' },
+    { word:'Lo siento',phonetic:'/ lo ˈsjen.to /',translation:'I\'m sorry', example:'"Lo siento mucho."' },
+    { word:'Amor',     phonetic:'/ aˈmoɾ /',     translation:'Love',       example:'"Te quiero, mi amor."' },
+],
+french: [
+    { word:'Bonjour',  phonetic:'/ bɔ̃.ʒuʁ /',   translation:'Hello',      example:'"Bonjour, comment ça va?"' },
+    { word:'Merci',    phonetic:'/ mɛʁ.si /',    translation:'Thank you',  example:'"Merci beaucoup!"' },
+    { word:'S\'il vous plaît',phonetic:'/ sil vu plɛ /',translation:'Please',example:'"L\'addition, s\'il vous plaît."' },
+    { word:'Au revoir',phonetic:'/ o.ʁə.vwaʁ /', translation:'Goodbye',    example:'"Au revoir, à bientôt!"' },
+    { word:'Je t\'aime',phonetic:'/ ʒə tɛm /',  translation:'I love you',  example:'"Je t\'aime, ma chérie."' },
+    { word:'Enchanté', phonetic:'/ ɑ̃.ʃɑ̃.te /', translation:'Nice to meet you', example:'"Enchanté de faire votre connaissance."' },
+],
+japanese: [
+    { word:'こんにちは',phonetic:'/ kon-ni-chi-wa /',translation:'Hello',   example:'"こんにちは！お元気ですか？"' },
+    { word:'ありがとう',phonetic:'/ a-ri-ga-to-u /',translation:'Thank you',example:'"ありがとうございます。"' },
+    { word:'すみません',phonetic:'/ su-mi-ma-sen /',translation:'Excuse me',example:'"すみません、駅はどこですか？"' },
+    { word:'愛してる',phonetic:'/ ai-shi-te-ru /',translation:'I love you', example:'"愛してる、ずっと。"' },
+    { word:'いただきます',phonetic:'/ i-ta-da-ki-mas /',translation:'Let\'s eat',example:'"いただきます！"' },
+    { word:'がんばって',phonetic:'/ gan-bat-te /',translation:'Good luck',  example:'"がんばって！応援してるよ。"' },
+],
+german: [
+    { word:'Hallo',    phonetic:'/ ˈha.lo /',    translation:'Hello',      example:'"Hallo! Wie geht\'s?"' },
+    { word:'Danke',    phonetic:'/ ˈdaŋ.kə /',   translation:'Thank you',  example:'"Vielen Dank!"' },
+    { word:'Bitte',    phonetic:'/ ˈbɪ.tə /',    translation:'Please/You\'re welcome', example:'"Bitte schön!"' },
+    { word:'Tschüss',  phonetic:'/ tʃʏs /',      translation:'Goodbye',    example:'"Tschüss! Bis morgen!"' },
+    { word:'Ich liebe dich',phonetic:'/ ɪç ˈliːbə dɪç /',translation:'I love you',example:'"Ich liebe dich sehr."' },
+    { word:'Entschuldigung',phonetic:'/ ɛntˈʃʊl.dɪ.ɡʊŋ /',translation:'Excuse me',example:'"Entschuldigung, wo ist der Bahnhof?"' },
+],
+};
+
+const quizData = [
+{ q:'What does "Bonjour" mean?', options:['Good night','Hello','Thank you','Goodbye'], answer:1, lang:'French 🇫🇷' },
+{ q:'Which language has the most native speakers?', options:['English','Spanish','Mandarin','Hindi'], answer:2, lang:'World Languages' },
+{ q:'"Arigatou" (ありがとう) means?', options:['Hello','Sorry','Thank you','Please'], answer:2, lang:'Japanese 🇯🇵' },
+{ q:'How many official UN languages are there?', options:['4','5','6','8'], answer:2, lang:'Fun Fact' },
+{ q:'"Ich liebe dich" is from which language?', options:['Dutch','Swedish','German','Danish'], answer:2, lang:'Germanic Languages' },
+];
+
+const progressData = [
+{ lang:'🇪🇸 Spanish',    pct:92, color:'bg-amber-400' },
+{ lang:'🇫🇷 French',     pct:78, color:'bg-blue-400' },
+{ lang:'🇩🇪 German',     pct:65, color:'bg-orange-400' },
+{ lang:'🇯🇵 Japanese',   pct:58, color:'bg-red-400' },
+{ lang:'🇨🇳 Mandarin',   pct:54, color:'bg-yellow-400' },
+{ lang:'🇵🇹 Portuguese', pct:48, color:'bg-rose-400' },
+{ lang:'🇰🇷 Korean',     pct:42, color:'bg-indigo-400' },
+{ lang:'🇸🇦 Arabic',     pct:36, color:'bg-teal-400' },
+];
+
+/* ──────────────────────────────────────────────────────────────
+NAVBAR — scroll effect
+────────────────────────────────────────────────────────────── */
+const navbar = document.getElementById('navbar');
+window.addEventListener('scroll', () => {
+if (window.scrollY > 60) {
+    navbar.classList.add('bg-cream/95','backdrop-blur-md','shadow-sm','py-3');
+    navbar.classList.remove('py-5');
+} else {
+    navbar.classList.remove('bg-cream/95','backdrop-blur-md','shadow-sm','py-3');
+    navbar.classList.add('py-5');
+}
+});
+
+/* ──────────────────────────────────────────────────────────────
+MOBILE MENU
+────────────────────────────────────────────────────────────── */
+const menuBtn = document.getElementById('menu-btn');
+const mobileMenu = document.getElementById('mobile-menu');
+let menuOpen = false;
+
+menuBtn.addEventListener('click', () => {
+menuOpen = !menuOpen;
+mobileMenu.style.maxHeight = menuOpen ? mobileMenu.scrollHeight + 'px' : '0';
+});
+function closeMobileMenu() {
+menuOpen = false;
+mobileMenu.style.maxHeight = '0';
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<ChessApp/>);
+/* ──────────────────────────────────────────────────────────────
+SCROLL-REVEAL
+────────────────────────────────────────────────────────────── */
+const revealObserver = new IntersectionObserver((entries) => {
+entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.12 });
+document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+/* ──────────────────────────────────────────────────────────────
+LANGUAGE CARDS
+────────────────────────────────────────────────────────────── */
+function renderLanguages(filter = 'all') {
+const grid = document.getElementById('lang-grid');
+const filtered = filter === 'all' ? languages : languages.filter(l => l.family === filter);
+grid.innerHTML = filtered.map((l, i) => `
+    <div class="lang-card reveal ${i<3?'delay-'+(i+1)+'00':''} ${l.color} border-l-4 ${l.accent} rounded-2xl p-7 cursor-pointer hover:-translate-y-1 transition-all duration-300 shadow-sm hover:shadow-xl group">
+    <div class="flex items-start justify-between mb-4">
+        <div class="text-4xl">${l.flag}</div>
+        <span class="text-xs font-mono px-2 py-1 rounded-full ${l.difficulty==='Easy'?'bg-sage/15 text-sage':l.difficulty==='Medium'?'bg-gold/15 text-gold':'bg-rust/15 text-rust'}">${l.difficulty}</span>
+    </div>
+    <h3 class="font-display text-2xl font-black mb-1 group-hover:text-gold transition-colors">${l.name}</h3>
+    <div class="text-xs font-mono text-slate/60 mb-3">${l.speakers} speakers</div>
+    <p class="text-sm text-slate leading-relaxed mb-5">${l.desc}</p>
+    <div class="flex flex-wrap gap-2">
+        ${l.words.map(w => `<span class="text-xs bg-ink/8 px-2.5 py-1 rounded-full font-mono">${w}</span>`).join('')}
+    </div>
+    </div>
+`).join('');
+  // Re-observe new elements
+grid.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+}
+renderLanguages();
+
+document.getElementById('lang-tabs').addEventListener('click', e => {
+const btn = e.target.closest('.tab-btn');
+if (!btn) return;
+document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+btn.classList.add('active');
+renderLanguages(btn.dataset.filter);
+});
+
+/* ──────────────────────────────────────────────────────────────
+FLASHCARD
+────────────────────────────────────────────────────────────── */
+let currentLang = 'spanish';
+let currentCard = 0;
+let isFlipped = false;
+const masteredCards = new Set();
+
+function renderCard() {
+const card = flashcards[currentLang][currentCard];
+  // Reset flip
+if (isFlipped) { flipCard(); isFlipped = false; }
+setTimeout(() => {
+    document.getElementById('fc-lang-label').textContent = currentLang.charAt(0).toUpperCase() + currentLang.slice(1);
+    document.getElementById('fc-word').textContent = card.word;
+    document.getElementById('fc-phonetic').textContent = card.phonetic;
+    document.getElementById('fc-translation').textContent = card.translation;
+    document.getElementById('fc-example').textContent = card.example;
+    document.getElementById('fc-counter').textContent = `${currentCard+1} / ${flashcards[currentLang].length}`;
+    renderDots();
+    updateMasterBtn();
+}, isFlipped ? 350 : 0);
+}
+
+function renderDots() {
+const dots = document.getElementById('fc-dots');
+dots.innerHTML = flashcards[currentLang].map((_, i) => `
+    <button onclick="goToCard(${i})" class="w-2 h-2 rounded-full transition-all ${i===currentCard?'bg-gold w-4':'bg-ink/20'}"></button>
+`).join('');
+}
+
+function flipCard() {
+isFlipped = !isFlipped;
+document.getElementById('fc-scene').classList.toggle('flipped');
+}
+
+function nextCard() {
+if (isFlipped) flipCard();
+setTimeout(() => {
+    currentCard = (currentCard + 1) % flashcards[currentLang].length;
+    renderCard();
+}, isFlipped ? 350 : 0);
+isFlipped = false;
+}
+
+function prevCard() {
+if (isFlipped) flipCard();
+setTimeout(() => {
+    currentCard = (currentCard - 1 + flashcards[currentLang].length) % flashcards[currentLang].length;
+    renderCard();
+}, isFlipped ? 350 : 0);
+isFlipped = false;
+}
+
+function goToCard(i) {
+if (isFlipped) { flipCard(); isFlipped = false; }
+setTimeout(() => { currentCard = i; renderCard(); }, isFlipped ? 350 : 0);
+}
+
+function toggleMastered() {
+const key = `${currentLang}-${currentCard}`;
+if (masteredCards.has(key)) masteredCards.delete(key);
+else masteredCards.add(key);
+updateMasterBtn();
+}
+
+function updateMasterBtn() {
+const btn = document.getElementById('master-btn');
+const key = `${currentLang}-${currentCard}`;
+if (masteredCards.has(key)) {
+    btn.textContent = '★ Mastered!';
+    btn.classList.add('bg-sage','text-cream','border-sage');
+} else {
+    btn.textContent = '✓ Mark as Mastered';
+    btn.classList.remove('bg-sage','text-cream');
+}
+}
+
+// Language picker for flashcards
+document.getElementById('fc-lang-picker').addEventListener('click', e => {
+const btn = e.target.closest('.fc-lang-btn');
+if (!btn) return;
+document.querySelectorAll('.fc-lang-btn').forEach(b => {
+    b.classList.remove('active','bg-gold','text-cream');
+    b.classList.add('border','border-ink/20');
+});
+btn.classList.add('active','bg-gold','text-cream');
+btn.classList.remove('border','border-ink/20');
+currentLang = btn.dataset.lang;
+currentCard = 0;
+isFlipped = false;
+renderCard();
+});
+
+renderCard();
+
+/* ──────────────────────────────────────────────────────────────
+QUIZ
+────────────────────────────────────────────────────────────── */
+let quizAnswers = new Array(quizData.length).fill(null);
+let quizSubmitted = false;
+
+function renderQuiz() {
+const container = document.getElementById('quiz-container');
+if (quizSubmitted) {
+    const score = quizAnswers.filter((a, i) => a === quizData[i].answer).length;
+    const pct = Math.round((score / quizData.length) * 100);
+    container.innerHTML = `
+    <div class="text-center bg-ink text-cream rounded-2xl p-12">
+        <div class="font-display text-7xl font-black text-gold mb-2">${score}/${quizData.length}</div>
+        <div class="text-mist/60 mb-8">${pct >= 80 ? '🏆 Excellent work!' : pct >= 60 ? '👍 Good effort!' : '📚 Keep studying!'}</div>
+        <div class="w-full bg-white/10 rounded-full h-3 mb-8 max-w-sm mx-auto">
+        <div class="bg-gold h-3 rounded-full prog-bar" style="width:${pct}%"></div>
+        </div>
+        <div class="space-y-3 text-left max-w-md mx-auto mb-10">
+        ${quizData.map((q, i) => `
+            <div class="flex items-start gap-3 text-sm">
+            <span class="${quizAnswers[i]===q.answer?'text-green-400':'text-red-400'}">${quizAnswers[i]===q.answer?'✓':'✗'}</span>
+            <div>
+                <span class="text-mist/70">${q.q}</span>
+                ${quizAnswers[i]!==q.answer ? `<div class="text-gold text-xs mt-0.5">Correct: ${q.options[q.answer]}</div>` : ''}
+            </div>
+            </div>
+        `).join('')}
+        </div>
+        <button onclick="resetQuiz()" class="bg-gold text-cream font-semibold px-8 py-3 rounded-full hover:bg-rust transition-colors">Try Again</button>
+    </div>`;
+    return;
+}
+container.innerHTML = quizData.map((q, qi) => `
+    <div class="mb-8 bg-cream rounded-2xl p-7 border border-warm shadow-sm">
+    <div class="flex items-center gap-3 mb-5">
+        <div class="w-7 h-7 bg-gold text-cream text-xs font-black rounded-full flex items-center justify-center shrink-0">${qi+1}</div>
+        <div>
+        <div class="font-display text-lg font-bold">${q.q}</div>
+        <div class="text-xs text-slate/50 font-mono mt-0.5">${q.lang}</div>
+        </div>
+    </div>
+    <div class="grid sm:grid-cols-2 gap-3">
+        ${q.options.map((opt, oi) => `
+        <button onclick="selectAnswer(${qi},${oi})"
+            class="quiz-opt text-sm text-left px-4 py-3 rounded-xl border-2 transition-all
+            ${quizAnswers[qi]===oi ? 'border-gold bg-gold/10 font-semibold text-gold' : 'border-ink/10 hover:border-gold/50'}">
+            <span class="font-mono text-xs mr-2 opacity-50">${String.fromCharCode(65+oi)}.</span>${opt}
+        </button>`).join('')}
+    </div>
+    </div>
+`).join('') + `
+    <div class="text-center mt-6">
+    <div class="text-sm text-slate mb-4">${quizAnswers.filter(a=>a!==null).length} of ${quizData.length} answered</div>
+    <button onclick="submitQuiz()" ${quizAnswers.includes(null)?'disabled':''} 
+        class="bg-ink text-cream font-semibold px-10 py-3.5 rounded-full transition-all ${quizAnswers.includes(null)?'opacity-40 cursor-not-allowed':'hover:bg-gold'}">
+        Submit Quiz →
+    </button>
+    </div>`;
+}
+
+function selectAnswer(qi, oi) {
+if (quizSubmitted) return;
+quizAnswers[qi] = oi;
+renderQuiz();
+}
+
+function submitQuiz() {
+if (quizAnswers.includes(null)) return;
+quizSubmitted = true;
+renderQuiz();
+}
+
+function resetQuiz() {
+quizAnswers = new Array(quizData.length).fill(null);
+quizSubmitted = false;
+renderQuiz();
+}
+
+renderQuiz();
+
+/* ──────────────────────────────────────────────────────────────
+PROGRESS BARS (animate on scroll)
+────────────────────────────────────────────────────────────── */
+const pbContainer = document.getElementById('progress-bars');
+pbContainer.innerHTML = progressData.map(item => `
+<div class="flex items-center gap-4">
+    <div class="w-32 shrink-0 text-sm text-mist/70 font-mono text-right">${item.lang}</div>
+    <div class="flex-1 bg-white/10 rounded-full h-3 overflow-hidden">
+    <div class="prog-bar ${item.color} h-3 rounded-full" data-width="${item.pct}" style="width:0%"></div>
+    </div>
+    <div class="w-10 text-right text-xs font-mono text-mist/50">${item.pct}%</div>
+</div>
+`).join('');
+
+const pbObserver = new IntersectionObserver(entries => {
+entries.forEach(e => {
+    if (e.isIntersecting) {
+    e.target.querySelectorAll('.prog-bar[data-width]').forEach(bar => {
+        setTimeout(() => { bar.style.width = bar.dataset.width + '%'; }, 200);
+    });
+    }
+});
+}, { threshold: 0.3 });
+pbObserver.observe(pbContainer);
 </script>
 </body>
 </html>
